@@ -40,3 +40,11 @@ export async function addHistoryEntry({ songTitle, artist, image }) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
+
+export async function removeHistoryEntryById(id) {
+  if (!id) return loadHistory();
+  const list = await loadHistory();
+  const next = list.filter((e) => e.id !== id);
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}

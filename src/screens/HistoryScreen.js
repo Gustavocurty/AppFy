@@ -7,13 +7,15 @@ import {
   Image,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
+import { useFocusEffect } from '@react-navigation/native';
 import { moderateScale, responsiveFont } from '../utils/responsive';
-import { loadHistory } from '../services/historyCache';
+import { loadHistory, removeHistoryEntryById } from '../services/historyCache';
 
 export default function HistoryScreen() {
-  const navigation = useNavigation();
   const [items, setItems] = useState([]);
 
   useFocusEffect(
@@ -28,19 +30,41 @@ export default function HistoryScreen() {
     }, []),
   );
 
-  function onPressItem(artist) {
-    if (!artist) return;
-    navigation.navigate('Search', {
-      prefillArtist: artist,
-      prefillAt: Date.now(),
-    });
+  async function handleCopy(item) {
+    const text = `${item.songTitle}\n${item.artist}`;
+    await Clipboard.setStringAsync(text);
+  }
+
+  function handlePressItem(item) {
+    Alert.alert(
+      item.songTitle,
+      item.artist,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Copiar',
+          onPress: () => {
+            handleCopy(item);
+          },
+        },
+        {
+          text: 'Excluir do histórico',
+          style: 'destructive',
+          onPress: async () => {
+            const next = await removeHistoryEntryById(item.id);
+            setItems(next);
+          },
+        },
+      ],
+      { cancelable: true },
+    );
   }
 
   function renderItem({ item }) {
     return (
       <TouchableOpacity
         style={[styles.row, Platform.OS === 'web' && styles.rowWeb]}
-        onPress={() => onPressItem(item.artist)}
+        onPress={() => handlePressItem(item)}
         activeOpacity={0.75}
       >
         {item.image ? (
@@ -61,36 +85,41 @@ export default function HistoryScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <View style={styles.bgOrb} />
-      <Text style={styles.screenTitle}>Histórico</Text>
-      <Text style={styles.subtitle}>Suas buscas recentes</Text>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.root}>
+        <View style={styles.bgOrb} />
+        <Text style={styles.screenTitle}>Histórico</Text>
+        <Text style={styles.subtitle}>Suas buscas recentes</Text>
 
-      {items.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <Text style={styles.emptyText}>
-            Nenhuma música salva ainda. Busque um artista na aba Buscar.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(it) => it.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-    </View>
+        {items.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyText}>
+              Nenhuma música salva ainda. Busque um artista na aba Buscar.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={items}
+            keyExtractor={(it) => it.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  safe: {
     flex: 1,
     backgroundColor: '#0A0A0A',
+  },
+  root: {
+    flex: 1,
     paddingHorizontal: moderateScale(22),
-    paddingTop: Platform.OS === 'ios' ? moderateScale(12) : moderateScale(8),
+    paddingTop: moderateScale(8),
   },
   bgOrb: {
     position: 'absolute',

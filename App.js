@@ -20,13 +20,15 @@ export default function App() {
           <Tab.Navigator
             screenOptions={{
               headerShown: false,
+              sceneContainerStyle: { backgroundColor: '#0A0A0A' },
               tabBarStyle: {
                 backgroundColor: '#0F0F0F',
                 borderTopColor: '#252525',
                 borderTopWidth: 1,
-                height: 62,
-                paddingBottom: 8,
                 paddingTop: 8,
+                paddingBottom: 14,
+                marginBottom: 18,
+                height: 72,
               },
               tabBarActiveTintColor: '#C8FF00',
               tabBarInactiveTintColor: '#6A6A6A',
